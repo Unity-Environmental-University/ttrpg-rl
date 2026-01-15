@@ -45,6 +45,30 @@ data/outputs/*.jsonl
 !data/matrix/.gitkeep
 !data/outputs/.gitkeep
 
+# EXPLICITLY PREVENT PROPRIETARY FILES FROM BEING COMMITTED TO PUBLIC REPO
+# These should ONLY exist in the private proprietary/ submodule
+constitutional_deck.py
+procgen_personas.py
+*FINDINGS.md
+*RUBRIC*.md
+*CRITICAL*.md
+BINARY_RUBRIC.md
+MATRIX_FINDINGS.md
+SCORING_AUDIT_FINDINGS.md
+VALIDATION_FINDINGS.md
+CRITICAL_FINDINGS.md
+RUBRIC_AS_QUESTIONS.md
+
+# Dialogue data files
+matrix_*.json
+data/matrix/
+proprietary/generated_data/
+
+# API keys and secrets
+.env
+.env.local
+*.key
+
 # Logs
 *.log
 logs/
