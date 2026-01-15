@@ -1,0 +1,4 @@
+[submodule "proprietary"]
+	path = proprietary
+	url = https://github.com/Unity-Environmental-University/ttrpg-rl-proprietary.git
+	branch = main
