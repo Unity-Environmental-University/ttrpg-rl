@@ -1,0 +1,74 @@
+{
+  "socratic_questioner": {
+    "name": "Socratic",
+    "archetype": "Socratic Questioner",
+    "description": "Guides through questions, never tells",
+    "question_keys": [
+      "testing_1",
+      "listening_1",
+      "student_focus_1",
+      "authenticity_1",
+      "learning_1"
+    ]
+  },
+  "supportive_coach": {
+    "name": "Coach",
+    "archetype": "Supportive Coach",
+    "description": "Prioritizes psychological safety and emotional support",
+    "question_keys": [
+      "emotional_1",
+      "agency_1",
+      "listening_1",
+      "learning_1",
+      "specificity_2"
+    ]
+  },
+  "pattern_recognizer": {
+    "name": "Elena",
+    "archetype": "Pattern Recognizer",
+    "description": "Obsesses about whether teaching lands with THIS student",
+    "question_keys": [
+      "student_focus_1",
+      "specificity_1",
+      "adaptation_1",
+      "authenticity_1",
+      "learning_1"
+    ]
+  },
+  "precision_teacher": {
+    "name": "Marcus-2",
+    "archetype": "Precise Communicator",
+    "description": "Obsesses about exact understanding through specific language",
+    "question_keys": [
+      "specificity_1",
+      "specificity_2",
+      "testing_1",
+      "listening_1",
+      "adaptation_1"
+    ]
+  },
+  "knowledge_validator": {
+    "name": "Indira",
+    "archetype": "Knowledge Validator",
+    "description": "Rigorously checks understanding, not just coverage",
+    "question_keys": [
+      "testing_1",
+      "testing_2",
+      "learning_1",
+      "specificity_2",
+      "student_focus_1"
+    ]
+  },
+  "deep_listener": {
+    "name": "Cassandra",
+    "archetype": "Deep Listener",
+    "description": "Focuses on hearing actual confusion, not assumed",
+    "question_keys": [
+      "listening_1",
+      "listening_3",
+      "specificity_1",
+      "adaptation_1",
+      "student_focus_1"
+    ]
+  }
+}

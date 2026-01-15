@@ -20,8 +20,8 @@ from dataclasses import dataclass, asdict
 
 from openai import OpenAI
 
-from procgen_personas import ProcgenPersona, create_custom_persona
-from constitutional_deck import CONSTITUTIONAL_QUESTIONS, get_questions_by_category
+from data_models import Persona, ConstitutionalQuestion
+from loaders import QuestionLoader, PersonaLoader, get_persona_system_prompt
 from student_profiles import StudentProfileConfig, create_student_from_config
 from scenarios import SCENARIO_LIST
 from student_responses import StudentResponseGenerator
@@ -65,21 +65,30 @@ class ProcgenDiscovery:
         self.student_response_gen = StudentResponseGenerator(api_key=api_key)
         self.rubric_scorer = BinaryRubricScorer(api_key=api_key)
 
-    def generate_random_persona(self, num_questions: int = None) -> ProcgenPersona:
+        # Load questions and personas (auto-detects proprietary or falls back to examples)
+        print("Loading question deck...", end=" ", flush=True)
+        self.questions = QuestionLoader.load()
+        print(f"✓ ({QuestionLoader.get_source()})")
+
+        print("Loading personas...", end=" ", flush=True)
+        self.all_personas = PersonaLoader.load()
+        print(f"✓ ({PersonaLoader.get_source()})")
+
+    def generate_random_persona(self, num_questions: int = None) -> Persona:
         """Generate a random persona by selecting random constitutional questions.
 
         Args:
             num_questions: How many questions to select. If None, random 4-8.
 
         Returns:
-            ProcgenPersona with random question selection
+            Persona with random question selection
         """
 
         if num_questions is None:
             num_questions = random.randint(4, 8)
 
         # Get all question keys
-        all_keys = list(CONSTITUTIONAL_QUESTIONS.keys())
+        all_keys = list(self.questions.keys())
 
         # Random selection
         selected_keys = random.sample(all_keys, min(num_questions, len(all_keys)))
@@ -93,7 +102,7 @@ class ProcgenDiscovery:
             "Learning Facilitator",
         ])
 
-        return create_custom_persona(
+        return Persona(
             name=f"Procgen_{len(selected_keys)}q",
             archetype=archetype,
             description=f"Randomly generated persona with {len(selected_keys)} constitutional questions",
@@ -102,7 +111,7 @@ class ProcgenDiscovery:
 
     def run_procgen_dialogue(
         self,
-        persona: ProcgenPersona,
+        persona: Persona,
         student_config: StudentProfileConfig,
         scenario,
     ) -> Tuple[dict, bool, str]:
@@ -115,12 +124,16 @@ class ProcgenDiscovery:
         try:
             student = create_student_from_config(student_config)
 
+            # Generate system prompt from persona and questions
+            system_prompt = get_persona_system_prompt(persona, self.questions)
+
             # Teacher opening
             opening_response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 max_tokens=300,
+                temperature=0.95,
                 messages=[
-                    {"role": "system", "content": persona.system_prompt},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": scenario.prompt},
                 ]
             )
@@ -148,6 +161,7 @@ class ProcgenDiscovery:
             teacher_response_2_raw = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 max_tokens=200,
+                temperature=0.95,
                 messages=[
                     {"role": "system", "content": f"You are {persona.name}. Continue the dialogue by responding to the student's last message. Keep it short (2-3 sentences)."},
                     {"role": "user", "content": f"Student said: {student_response_1}\n\nRespond:"},
@@ -160,6 +174,7 @@ class ProcgenDiscovery:
             student_response_2_raw = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 max_tokens=200,
+                temperature=0.95,
                 messages=[
                     {"role": "system", "content": f"You are {student.name}. The teacher just responded. React authentically - show learning, deeper confusion, or pushback."},
                     {"role": "user", "content": f"Teacher said: {teacher_response_2}\n\nYour response:"},

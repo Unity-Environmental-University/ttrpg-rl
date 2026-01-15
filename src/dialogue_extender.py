@@ -82,6 +82,7 @@ Respond as {teacher_name} to continue the dialogue. Help them move forward."""
             teacher_response_2 = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 max_tokens=200,
+                temperature=0.9,
                 messages=[
                     {"role": "system", "content": teacher_system},
                     {"role": "user", "content": teacher_prompt},
@@ -112,6 +113,7 @@ Respond. What's your reaction to the teacher's response?"""
             student_response_2 = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 max_tokens=200,
+                temperature=0.9,
                 messages=[
                     {"role": "system", "content": student_system},
                     {"role": "user", "content": student_prompt},
