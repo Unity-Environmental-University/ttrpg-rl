@@ -32,6 +32,7 @@ class ConstitutionalQuestion:
     category: QuestionCategory
     pedagogical_principle: str
     persona_bias: str = ""
+    variant_type: str = "original"  # "original" or "koan"
 
     def __hash__(self):
         return hash(self.key)

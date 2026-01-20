@@ -58,17 +58,18 @@ class ProcgenResult:
 class ProcgenDiscovery:
     """Discover optimal persona/student/scenario combinations via procgen."""
 
-    def __init__(self, api_key: str = None):
+    def __init__(self, api_key: str = None, question_set: str = "original"):
         if api_key is None:
             api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key)
         self.student_response_gen = StudentResponseGenerator(api_key=api_key)
         self.rubric_scorer = BinaryRubricScorer(api_key=api_key)
+        self.question_set = question_set
 
         # Load questions and personas (auto-detects proprietary or falls back to examples)
         print("Loading question deck...", end=" ", flush=True)
-        self.questions = QuestionLoader.load()
-        print(f"✓ ({QuestionLoader.get_source()})")
+        self.questions = QuestionLoader.load(question_set=question_set)
+        print(f"✓ ({QuestionLoader.get_source()} - {question_set})")
 
         print("Loading personas...", end=" ", flush=True)
         self.all_personas = PersonaLoader.load()

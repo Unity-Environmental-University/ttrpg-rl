@@ -21,60 +21,100 @@ class QuestionLoader:
 
     _cache: Optional[Dict[str, ConstitutionalQuestion]] = None
     _source: Optional[str] = None
+    _question_set: str = "original"
 
     @classmethod
-    def load(cls, source: str = "auto") -> Dict[str, ConstitutionalQuestion]:
+    def load(cls, source: str = "auto", question_set: str = "original") -> Dict[str, ConstitutionalQuestion]:
         """Load all constitutional questions.
 
         Args:
             source: "auto" (try proprietary, fall back), "proprietary", "examples", or path
+            question_set: "original", "koans", or "mixed"
 
         Returns:
             Dict mapping question key to ConstitutionalQuestion
         """
 
-        if cls._cache is not None and source == "auto":
-            return cls._cache
+        cache_key = f"{source}_{question_set}"
 
-        if source == "auto":
-            # Try proprietary first
-            questions = cls._try_proprietary()
+        # Note: Can't use single cache since different question_sets may be requested
+        # Just load fresh each time to keep it simple
+
+        if question_set == "koans":
+            questions = cls._try_proprietary_koans()
             if questions:
-                cls._cache = questions
+                cls._source = "proprietary_koans"
+                cls._question_set = "koans"
+                return questions
+            raise RuntimeError("Koans not available (proprietary only)")
+
+        elif question_set == "mixed":
+            originals = cls._try_proprietary() or cls._load_examples()
+            koans = cls._try_proprietary_koans()
+            if not originals:
+                raise RuntimeError("No questions available")
+            if not koans:
+                raise RuntimeError("No koans available (proprietary only)")
+
+            # Merge: 50/50 of original question keys + koan keys
+            mixed = {}
+            all_keys = list(originals.keys())
+            import random
+            selected = random.sample(all_keys, k=len(all_keys)//2)
+            for key in selected:
+                mixed[key] = originals[key]
+            for key in koans.keys():
+                # Replace corresponding original with koan
+                base_key = key.replace("_koan", "")
+                if base_key in mixed:
+                    mixed[base_key] = koans[key]
+                else:
+                    mixed[key] = koans[key]
+
+            cls._source = "mixed"
+            cls._question_set = "mixed"
+            return mixed
+
+        else:  # "original" (default)
+            if source == "auto":
+                # Try proprietary first
+                questions = cls._try_proprietary()
+                if questions:
+                    cls._source = "proprietary"
+                    cls._question_set = "original"
+                    return questions
+
+                # Fall back to examples
+                questions = cls._load_examples()
+                if questions:
+                    cls._source = "examples"
+                    cls._question_set = "original"
+                    return questions
+
+                raise RuntimeError("No questions available (checked proprietary/ and examples/)")
+
+            elif source == "proprietary":
+                questions = cls._try_proprietary()
+                if not questions:
+                    raise FileNotFoundError("Proprietary constitutional deck not found")
                 cls._source = "proprietary"
+                cls._question_set = "original"
                 return questions
 
-            # Fall back to examples
-            questions = cls._load_examples()
-            if questions:
-                cls._cache = questions
+            elif source == "examples":
+                questions = cls._load_examples()
+                if not questions:
+                    raise FileNotFoundError("Example questions not found")
                 cls._source = "examples"
+                cls._question_set = "original"
                 return questions
 
-            raise RuntimeError("No questions available (checked proprietary/ and examples/)")
-
-        elif source == "proprietary":
-            questions = cls._try_proprietary()
-            if not questions:
-                raise FileNotFoundError("Proprietary constitutional deck not found")
-            cls._cache = questions
-            cls._source = "proprietary"
-            return questions
-
-        elif source == "examples":
-            questions = cls._load_examples()
-            if not questions:
-                raise FileNotFoundError("Example questions not found")
-            cls._cache = questions
-            cls._source = "examples"
-            return questions
-
-        else:
-            # Custom path
-            questions = cls._load_from_path(source)
-            cls._cache = questions
-            cls._source = source
-            return questions
+            else:
+                # Custom path
+                questions = cls._load_from_path(source)
+                cls._source = source
+                cls._question_set = "original"
+                return questions
 
     @classmethod
     def _try_proprietary(cls) -> Optional[Dict[str, ConstitutionalQuestion]]:
@@ -86,6 +126,19 @@ class QuestionLoader:
             from constitutional_deck import CONSTITUTIONAL_QUESTIONS
 
             return CONSTITUTIONAL_QUESTIONS
+
+        except (ImportError, ModuleNotFoundError, AttributeError):
+            return None
+
+    @classmethod
+    def _try_proprietary_koans(cls) -> Optional[Dict[str, ConstitutionalQuestion]]:
+        """Try to load koans from proprietary layer."""
+        try:
+            sys.path.insert(0, str(Path(__file__).parent.parent / "proprietary" / "constitutional_deck"))
+
+            from constitutional_koans import CONSTITUTIONAL_KOANS
+
+            return CONSTITUTIONAL_KOANS
 
         except (ImportError, ModuleNotFoundError, AttributeError):
             return None
